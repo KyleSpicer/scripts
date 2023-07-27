@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Function to run iwyu, iwyu-py, and remove the check.out file
+
+process_file() {
+  local file=$1
+  local base=${file##*/}
+  echo "Processing $base..."
+
+  # Run iwyu on the file and redirect output to check.out
+  include-what-you-use -Xiwyu --error_always "$file" 2> check.out
+  
+  # Run iwyu-py using the check.out file
+  python3 ~/include-what-you-use/fix_includes.py < check.out
+
+  # Remove the check.out file
+  rm check.out
+
+  echo "Finished processing $base."
+  echo
+}
+
+# Recursively find files in src/, include/, and test/ directories and call the process_file function
+find src/ include/ test/ -type f \( -name "*.c" -o -name "*.h" \) -print0 | 
+while IFS= read -r -d $'\0' file; do
+  process_file "$file"
+done
